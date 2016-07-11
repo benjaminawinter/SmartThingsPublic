@@ -25,15 +25,35 @@ definition(
 
 
 preferences {
+//Motion detectors
     section("Turn on when motion detected:") {
         input "themotion", "capability.motionSensor", required: true, title: "Where?"
     }
-    section("Turn off when there's been no movement for") {
-        input "minutes", "number", required: true, title: "Minutes?"
+    section("Turn on when motion detected:") {
+        input "LivingRoom", "capability.motionSensor", required: true, title: "Where?"
     }
+    section("Turn on when motion detected:") {
+        input "Kitchen", "capability.motionSensor", required: true, title: "Where?"
+    }
+    section("Turn on when motion detected:") {
+        input "DiningRoom", "capability.motionSensor", required: true, title: "Where?"
+    }
+    section("Turn on when motion detected:") {
+        input "Hall", "capability.motionSensor", required: true, title: "Where?"
+    }
+    section("Turn on when motion detected:") {
+        input "Bedroom", "capability.motionSensor", required: true, title: "Where?"
+    }
+    
+    //Lights
     section("Turn on this light") {
         input "theswitch", "capability.switch", required: true
     }
+    
+    section("Turn off when there's been no movement for") {
+        input "minutes", "number", required: true, title: "Minutes?"
+    }
+    
 }
 
 def installed() {
@@ -51,14 +71,14 @@ def initialize() {
 }
 
 def motionDetectedHandler(evt) {
-    log.debug "motionDetectedHandler called: $evt"
+    log.debug "motionDetectedHandler called: $evt.device"
     theswitch.on()
     def params = [
     	uri: "https://s2hjzofzdf.execute-api.us-east-1.amazonaws.com/dev/motion",
    		body: [
                 detectorName: "Living Room",
                 event: "Motion Detected",
-                message: "some logging text",
+                message: $evt.device,
                 timestamp: now()
     		]
 		]
