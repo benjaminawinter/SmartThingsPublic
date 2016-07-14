@@ -27,9 +27,6 @@ definition(
 preferences {
 //Motion detectors
     section("Turn on when motion detected:") {
-        input "themotion", "capability.motionSensor", required: true, title: "Where?"
-    }
-    section("Turn on when motion detected:") {
         input "LivingRoom", "capability.motionSensor", required: true, title: "Where?"
     }
     section("Turn on when motion detected:") {
@@ -66,24 +63,39 @@ def updated() {
 }
 
 def initialize() {
-    subscribe(themotion, "motion.active", motionDetectedHandler)
-    subscribe(themotion, "motion.inactive", motionStoppedHandler)
+    subscribe(LivingRoom, "motion.active", motionDetectedHandler)
+    subscribe(LivingRoom, "motion.inactive", motionStoppedHandler)
+    
+    subscribe(Kitchen, "motion.active", motionDetectedHandler)
+    subscribe(Kitchen, "motion.inactive", motionStoppedHandler)
+    
+    subscribe(DiningRoom, "motion.active", motionDetectedHandler)
+    subscribe(DiningRoom, "motion.inactive", motionStoppedHandler)
+    
+    subscribe(Hall, "motion.active", motionDetectedHandler)
+    subscribe(Hall, "motion.inactive", motionStoppedHandler)
+    
+    subscribe(Bedroom, "motion.active", motionDetectedHandler)
+    subscribe(Bedroom, "motion.inactive", motionStoppedHandler)
 }
 
 def motionDetectedHandler(evt) {
     log.debug "motionDetectedHandler called: $evt.device"
     theswitch.on()
+    String deviceName = "$evt.device"
+    
     def params = [
     	uri: "https://s2hjzofzdf.execute-api.us-east-1.amazonaws.com/dev/motion",
    		body: [
-                detectorName: "Living Room",
+                detectorName: deviceName,
                 event: "Motion Detected",
-                message: $evt.device,
+                message: "some logging text",
                 timestamp: now()
     		]
 		]
-
+        
         try {
+        
             httpPostJson(params) { resp ->
                 resp.headers.each {
                     log.debug "${it.name} : ${it.value}"
@@ -96,11 +108,13 @@ def motionDetectedHandler(evt) {
 }
 
 def motionStoppedHandler(evt) {
-    log.debug "motionStoppedHandler called: $evt"
+    log.debug "motionStoppedHandler called: $evt.device"
+    String deviceName = "$evt.device"
+    
     def params = [
     	uri: "https://s2hjzofzdf.execute-api.us-east-1.amazonaws.com/dev/motion",
    		body: [
-                detectorName: "Living Room",
+                detectorName: deviceName,
                 event: "Motion Stopped",
                 message: "some logging text",
                 timestamp: now()
@@ -117,14 +131,15 @@ def motionStoppedHandler(evt) {
         } catch (e) {
             log.debug "something went wrong: $e"
         }
-    runIn(60 * minutes, checkMotion)
+        
+        runIn(60 * minutes, checkMotion(evt))
 }
 
-def checkMotion() {
-    log.debug "In checkMotion scheduled method"
+def checkMotion(event) {
+    log.debug "In checkMotion scheduled method, device: " + event.device
 
-    def motionState = themotion.currentState("motion")
-
+    def motionState = event.device.currentState("motion")
+    
     if (motionState.value == "inactive") {
         // get the time elapsed between now and when the motion reported inactive
         def elapsed = now() - motionState.date.time
