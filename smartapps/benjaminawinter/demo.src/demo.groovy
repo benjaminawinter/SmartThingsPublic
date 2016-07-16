@@ -27,30 +27,40 @@ definition(
 preferences {
 //Motion detectors
     section("Turn on when motion detected:") {
-        input "LivingRoom", "capability.motionSensor", required: true, title: "Where?"
+        input "LivingRoomMotion", "capability.motionSensor", required: true, title: "Where?"
     }
     section("Turn on when motion detected:") {
-        input "Kitchen", "capability.motionSensor", required: true, title: "Where?"
+        input "KitchenMotion", "capability.motionSensor", required: true, title: "Where?"
     }
     section("Turn on when motion detected:") {
-        input "DiningRoom", "capability.motionSensor", required: true, title: "Where?"
+        input "DiningRoomMotion", "capability.motionSensor", required: true, title: "Where?"
     }
     section("Turn on when motion detected:") {
-        input "Hall", "capability.motionSensor", required: true, title: "Where?"
+        input "HallMotion", "capability.motionSensor", required: true, title: "Where?"
     }
     section("Turn on when motion detected:") {
-        input "Bedroom", "capability.motionSensor", required: true, title: "Where?"
+        input "BedroomMotion", "capability.motionSensor", required: true, title: "Where?"
     }
     
     //Lights
     section("Turn on this light") {
-        input "theswitch", "capability.switch", required: true
+        input "LivingRoomLight", "capability.switch", required: true
     }
-    
+    section("Turn on this light") {
+        input "KitchenLight", "capability.switch", required: true
+    }
+    section("Turn on this light") {
+        input "DiningRoomLight", "capability.switch", required: true
+    }
+    section("Turn on this light") {
+        input "HallLight", "capability.switch", required: true
+    }
+    section("Turn on this light") {
+        input "BedroomLight", "capability.switch", required: true
+    }
     section("Turn off when there's been no movement for") {
         input "minutes", "number", required: true, title: "Minutes?"
     }
-    
 }
 
 def installed() {
@@ -63,119 +73,96 @@ def updated() {
 }
 
 def initialize() {
-    subscribe(LivingRoom, "motion.active", motionDetectedHandler)
-    subscribe(LivingRoom, "motion.inactive", motionStoppedHandler)
+    subscribe(LivingRoomMotion, "motion.active", motionDetectedHandler)
+    subscribe(LivingRoomMotion, "motion.inactive", motionStoppedHandler)
     
-    subscribe(Kitchen, "motion.active", motionDetectedHandler)
-    subscribe(Kitchen, "motion.inactive", motionStoppedHandler)
+    subscribe(KitchenMotion, "motion.active", motionDetectedHandler)
+    subscribe(KitchenMotion, "motion.inactive", motionStoppedHandler)
     
-    subscribe(DiningRoom, "motion.active", motionDetectedHandler)
-    subscribe(DiningRoom, "motion.inactive", motionStoppedHandler)
+    subscribe(DiningRoomMotion, "motion.active", motionDetectedHandler)
+    subscribe(DiningRoomMotion, "motion.inactive", motionStoppedHandler)
     
-    subscribe(Hall, "motion.active", motionDetectedHandler)
-    subscribe(Hall, "motion.inactive", motionStoppedHandler)
+    subscribe(HallMotion, "motion.active", motionDetectedHandler)
+    subscribe(HallMotion, "motion.inactive", motionStoppedHandler)
     
-    subscribe(Bedroom, "motion.active", motionDetectedHandler)
-    subscribe(Bedroom, "motion.inactive", motionStoppedHandler)
+    subscribe(BedroomMotion, "motion.active", motionDetectedHandler)
+    subscribe(BedroomMotion, "motion.inactive", motionStoppedHandler)
 }
 
 def motionDetectedHandler(evt) {
     log.debug "motionDetectedHandler called: $evt.device"
-    theswitch.on()
     String deviceName = "$evt.device"
     
-    def params = [
-    	uri: "https://s2hjzofzdf.execute-api.us-east-1.amazonaws.com/dev/motion",
-   		body: [
-                detectorName: deviceName,
-                event: "Motion Detected",
-                message: "some logging text",
-                timestamp: now()
-    		]
-		]
-        
-        try {
-        
-            httpPostJson(params) { resp ->
-                resp.headers.each {
-                    log.debug "${it.name} : ${it.value}"
-                }
-                log.debug "response contentType: ${resp.    contentType}"
-            }
-        } catch (e) {
-            log.debug "something went wrong: $e"
-        }
+    postMotionEvent(deviceName, "Motion Detected", "Motion Detected Event Detected")
+    
+    if(deviceName == "LivingRoomMotion"){
+    	LivingRoomLight.on()
+    }
+    if(deviceName == "KitchenMotion"){
+    	KitchenLight.on()
+    }
+    if(deviceName == "DiningRoomMotion"){
+    	DiningRoomLight.on()
+    }
+    if(deviceName == "HallMotion"){
+    	HallLight.on()
+    }
+    if(deviceName == "BedroomMotion"){
+    	BedroomLight.on()
+    }
 }
 
 def motionStoppedHandler(evt) {
     log.debug "motionStoppedHandler called: $evt.device"
-    
     String deviceName = "$evt.device"
     
-    if(deviceName == "LivingRoom"){
+    postMotionEvent(deviceName, "Motion Stopped", "Motion Stopped Event Detected")
+    
+    if(deviceName == "LivingRoomMotion"){
     	runIn(60 * minutes, checkMotionLivingRoom)
     }
-    if(deviceName == "Kitchen"){
+    if(deviceName == "KitchenMotion"){
     	runIn(60 * minutes, checkMotionKitchen)
     }
-    if(deviceName == "DiningRoom"){
+    if(deviceName == "DiningRoomMotion"){
     	runIn(60 * minutes, checkMotionDiningRoom)
     }
-    if(deviceName == "Hall"){
+    if(deviceName == "HallMotion"){
     	runIn(60 * minutes, checkMotionHall)
     }
-    if(deviceName == "Bedroom"){
+    if(deviceName == "BedroomMotion"){
     	runIn(60 * minutes, checkMotionBedroom)
     }
     
-    def params = [
-    	uri: "https://s2hjzofzdf.execute-api.us-east-1.amazonaws.com/dev/motion",
-   		body: [
-                detectorName: deviceName,
-                event: "Motion Stopped",
-                message: "some logging text",
-                timestamp: now()
-    		]
-		]
-
-        try {
-            httpPostJson(params) { resp ->
-                resp.headers.each {
-                    log.debug "${it.name} : ${it.value}"
-                }
-                log.debug "response contentType: ${resp.    contentType}"
-            }
-        } catch (e) {
-            log.debug "something went wrong: $e"
-        }
+    
 }
 
 def checkMotionLivingRoom() {
-    def motionState = LivingRoom.currentState("motion")
-    checkMotion(motionState)
+    def motionState = LivingRoomMotion.currentState("motion")
+    checkMotion(motionState, LivingRoomLight)
 }
 
 def checkMotionKitchen() {
-    def motionState = Kitchen.currentState("motion")
-    checkMotion(motionState)
+    def motionState = KitchenMotion.currentState("motion")
+    checkMotion(motionState, KitchenLight)
 }
 
 def checkMotionDiningRoom() {
-    def motionState = DiningRoom.currentState("motion")
-    checkMotion(motionState)
+    def motionState = DiningRoomMotion.currentState("motion")
+    checkMotion(motionState, DiningRoomLight)
 }
 
 def checkMotionHall() {
-    def motionState = Hall.currentState("motion")
-    checkMotion(motionState)
+    def motionState = HallMotion.currentState("motion")
+    checkMotion(motionState, HallLight)
 }
 
 def checkMotionBedroom() {
-    def motionState = Bedroom.currentState("motion")
-    checkMotion(motionState)
+    def motionState = BedroomMotion.currentState("motion")
+    checkMotion(motionState, BedroomLight)
 }
 
-def checkMotion(motionState){
+def checkMotion(motionState, theswitch){
 	 if (motionState.value == "inactive") {
         // get the time elapsed between now and when the motion reported inactive
         def elapsed = now() - motionState.date.time
@@ -193,4 +180,27 @@ def checkMotion(motionState){
         // Motion active; just log it and do nothing
         log.debug "Motion is active, do nothing and wait for inactive"
     }
+}
+
+def postMotionEvent(deviceName, event, message){
+	def params = [
+    	uri: "https://s2hjzofzdf.execute-api.us-east-1.amazonaws.com/dev/motion",
+   		body: [
+                detectorName: deviceName,
+                event: event,
+                message: message,
+                timestamp: now()
+    		]
+		]
+
+        try {
+            httpPostJson(params) { resp ->
+                resp.headers.each {
+                    log.debug "${it.name} : ${it.value}"
+                }
+                log.debug "response contentType: ${resp.contentType}"
+            }
+        } catch (e) {
+            log.debug "something went wrong: $e"
+        }
 }
