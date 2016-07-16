@@ -109,7 +109,24 @@ def motionDetectedHandler(evt) {
 
 def motionStoppedHandler(evt) {
     log.debug "motionStoppedHandler called: $evt.device"
+    
     String deviceName = "$evt.device"
+    
+    if(deviceName == "LivingRoom"){
+    	runIn(60 * minutes, checkMotionLivingRoom)
+    }
+    if(deviceName == "Kitchen"){
+    	runIn(60 * minutes, checkMotionKitchen)
+    }
+    if(deviceName == "DiningRoom"){
+    	runIn(60 * minutes, checkMotionDiningRoom)
+    }
+    if(deviceName == "Hall"){
+    	runIn(60 * minutes, checkMotionHall)
+    }
+    if(deviceName == "Bedroom"){
+    	runIn(60 * minutes, checkMotionBedroom)
+    }
     
     def params = [
     	uri: "https://s2hjzofzdf.execute-api.us-east-1.amazonaws.com/dev/motion",
@@ -131,22 +148,41 @@ def motionStoppedHandler(evt) {
         } catch (e) {
             log.debug "something went wrong: $e"
         }
-        
-        runIn(60 * minutes, checkMotion(evt))
 }
 
-def checkMotion(event) {
-    log.debug "In checkMotion scheduled method, device: " + event.device
+def checkMotionLivingRoom() {
+    def motionState = LivingRoom.currentState("motion")
+    checkMotion(motionState)
+}
 
-    def motionState = event.device.currentState("motion")
-    
-    if (motionState.value == "inactive") {
+def checkMotionKitchen() {
+    def motionState = Kitchen.currentState("motion")
+    checkMotion(motionState)
+}
+
+def checkMotionDiningRoom() {
+    def motionState = DiningRoom.currentState("motion")
+    checkMotion(motionState)
+}
+
+def checkMotionHall() {
+    def motionState = Hall.currentState("motion")
+    checkMotion(motionState)
+}
+
+def checkMotionBedroom() {
+    def motionState = Bedroom.currentState("motion")
+    checkMotion(motionState)
+}
+
+def checkMotion(motionState){
+	 if (motionState.value == "inactive") {
         // get the time elapsed between now and when the motion reported inactive
         def elapsed = now() - motionState.date.time
 
         // elapsed time is in milliseconds, so the threshold must be converted to milliseconds too
         def threshold = 1000 * 60 * minutes
-
+        
         if (elapsed >= threshold) {
             log.debug "Motion has stayed inactive long enough since last check ($elapsed ms):  turning switch off"
             theswitch.off()
