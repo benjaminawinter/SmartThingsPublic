@@ -163,6 +163,8 @@ def checkMotionBedroom() {
 }
 
 def checkMotion(motionState, theswitch){
+	String msg = "checkMotion called"
+    
 	 if (motionState.value == "inactive") {
         // get the time elapsed between now and when the motion reported inactive
         def elapsed = now() - motionState.date.time
@@ -171,18 +173,20 @@ def checkMotion(motionState, theswitch){
         def threshold = 1000 * 60 * minutes
         
         if (elapsed >= threshold) {
-            log.debug "Motion has stayed inactive long enough since last check ($elapsed ms):  turning switch off"
+        	msg = "Motion has stayed inactive long enough since last check ($elapsed ms):  turning switch off"
             theswitch.off()
         } else {
-            log.debug "Motion has not stayed inactive long enough since last check ($elapsed ms):  doing nothing"
+        	msg = "Motion has not stayed inactive long enough since last check ($elapsed ms):  doing nothing"
         }
     } else {
         // Motion active; just log it and do nothing
-        log.debug "Motion is active, do nothing and wait for inactive"
+        msg = "Motion is active, do nothing and wait for inactive"
     }
+    postMotionEvent("Switch: " + "$theswitch", "check motion", msg)
 }
 
 def postMotionEvent(deviceName, event, message){
+
 	def params = [
     	uri: "https://s2hjzofzdf.execute-api.us-east-1.amazonaws.com/dev/motion",
    		body: [
@@ -196,11 +200,11 @@ def postMotionEvent(deviceName, event, message){
         try {
             httpPostJson(params) { resp ->
                 resp.headers.each {
-                    log.debug "${it.name} : ${it.value}"
+                    //log.debug "${it.name} : ${it.value}"
                 }
-                log.debug "response contentType: ${resp.contentType}"
+                //log.debug "response contentType: ${resp.contentType}"
             }
         } catch (e) {
-            log.debug "something went wrong: $e"
+            //log.debug "something went wrong: $e"
         }
 }
